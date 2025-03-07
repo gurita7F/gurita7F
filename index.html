@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roda Keberuntungan</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 50px;
+        }
+        canvas {
+            background-color: black;
+            border-radius: 50%;
+            width: 350px;
+            height: 350px;
+        }
+        .input-area {
+            margin-top: 20px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            background-color: black;
+            color: white;
+            border: 2px solid yellow;
+            text-align: center;
+        }
+        button {
+            background-color: yellow;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: yellow;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Roda Keberuntungan</h1>
+<div class="container">
+    <canvas id="wheel" width="350" height="350"></canvas>
+</div>
+
+<div id="result">Nama Terpilih: -</div>
+
+<div class="input-area">
+    <input type="text" id="nameInput" placeholder="Masukkan nama...">
+    <button onclick="addName()">Tambah Nama</button>
+    <button onclick="spin()">Play</button>
+</div>
+
+<audio id="yaySound" src="https://www.fesliyanstudios.com/play-mp3/6513" preload="auto"></audio>
+
+<script>
+    let canvas = document.getElementById("wheel");
+    let ctx = canvas.getContext("2d");
+    let colors = ["red", "orange", "yellow", "green", "blue", "purple", "pink"];
+    let names = [];
+
+    let startAngle = 0;
+    let spinning = false;
+
+    function drawWheel() {
+        let totalNames = names.length;
+        if (totalNames === 0) return;
+        let arc = (2 * Math.PI) / totalNames;
+        let radius = 170;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < totalNames; i++) {
+            let angle = startAngle + i * arc;
+            ctx.beginPath();
+            ctx.moveTo(175, 175);
+            ctx.arc(175, 175, radius, angle, angle + arc, false);
+            ctx.closePath();
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.save();
+            ctx.fillStyle = "white";
+            ctx.translate(175 + Math.cos(angle + arc / 2) * 120, 175 + Math.sin(angle + arc / 2) * 120);
+            ctx.rotate(angle + arc / 2);
+            ctx.textAlign = "center";
+            ctx.font = "bold 18px Arial";
+            ctx.fillText(names[i], 0, 0);
+            ctx.restore();
+        }
+    }
+
+    function addName() {
+        let input = document.getElementById("nameInput").value.trim();
+        if (!input) return;
+
+        names.push(input);
+        drawWheel();
+        document.getElementById("nameInput").value = "";
+    }
+
+    function spin() {
+        if (spinning || names.length === 0) return;
+        spinning = true;
+
+        document.getElementById("result").innerText = "Sedang memilih...";
+
+        let totalNames = names.length;
+        let arc = (2 * Math.PI) / totalNames;
+        let spinTime = Math.random() * 3000 + 2000;
+        let finalAngle = Math.random() * 2 * Math.PI;
+        let selectedIdx = Math.floor((finalAngle + startAngle) / arc) % totalNames;
+        let targetAngle = 2 * Math.PI * 5 + selectedIdx * arc + arc / 2;
+
+        let startTime = Date.now();
+        function animate() {
+            let elapsed = Date.now() - startTime;
+            if (elapsed >= spinTime) {
+                startAngle = targetAngle % (2 * Math.PI);
+                spinning = false;
+                document.getElementById("result").innerText = "Nama Terpilih: " + names[selectedIdx];
+                document.getElementById("yaySound").play();
+                return;
+            }
+            let progress = elapsed / spinTime;
+            let easedProgress = 1 - Math.pow(1 - progress, 3);
+            startAngle += (targetAngle - startAngle) * easedProgress;
+            drawWheel();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    drawWheel();
+</script>
+
+</body>
+</html>
+
+  
